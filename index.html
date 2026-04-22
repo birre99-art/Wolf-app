@@ -797,13 +797,7 @@ function finalizeRound(){
   saveTournament();
 
   if(tournament.rounds.length < maxRounds){
-    setTimeout(() => {
-      if(confirm(`${roundName} er ferdig!\nVil du klargjøre Runde ${tournament.rounds.length + 1} nå?`)){
-        prepareNextRound();
-      } else {
-        showFinish();
-      }
-    }, 100);
+    showFinish();
     return;
   }
   showChampion();
@@ -913,13 +907,16 @@ function prepareNextRound(){
 }
 
 function resumeCurrentOrSetup(){
+  // Always read maxRounds from tournament (persisted), not local variable
+  const mr = tournament.maxRounds || 1;
+  maxRounds = mr; // sync local variable
+
   // 1. Resume a game in progress
   if(tournament.currentGame){
     restoreCurrentGame(tournament.currentGame);
     showScreen('game'); render(); return;
   }
-  const mr = tournament.maxRounds || maxRounds || 1;
-  // 2. More rounds to play — go straight to next round
+  // 2. More rounds to play — start next round directly
   if(tournament.rounds.length < mr){
     prepareNextRound(); return;
   }
