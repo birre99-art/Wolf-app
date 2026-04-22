@@ -187,7 +187,7 @@ button,input{font-family:'DM Mono',monospace}
   </div>
 
   <!-- ACTIVE TOURNAMENT MODE -->
-  <div id="setup-active" class="hidden">
+  <div id="setup-active" class="hidden" style="display:none;flex-direction:column;align-items:center;gap:1.25rem;width:100%">
     <div class="setup-card" style="width:100%;max-width:340px">
       <div class="setup-label">Aktiv turnering</div>
       <div id="active-players-display" style="font-size:16px;color:var(--text);margin-bottom:8px"></div>
@@ -202,7 +202,7 @@ button,input{font-family:'DM Mono',monospace}
   </div>
 
   <!-- NEW TOURNAMENT MODE -->
-  <div id="setup-new">
+  <div id="setup-new" style="display:flex;flex-direction:column;align-items:center;gap:1.25rem;width:100%">
     <div class="setup-card" style="width:100%;max-width:340px">
       <div class="setup-label">Antall spillere</div>
       <div class="toggle-row">
@@ -495,8 +495,8 @@ function updateResetButton(){
   const newDiv    = document.getElementById('setup-new');
   if(!activeDiv || !newDiv) return;
   if(hasData){
-    activeDiv.classList.remove('hidden');
-    newDiv.classList.add('hidden');
+    activeDiv.style.display = 'flex';
+    newDiv.style.display = 'none';
     // Fill in active tournament info
     const np = tournament.numPlayers || 3;
     const mr = tournament.maxRounds || 1;
@@ -519,8 +519,8 @@ function updateResetButton(){
       <div class="rules-row"><span>Motstandere vinner vs solo</span><span>+1p hver</span></div>
       <div class="rules-row"><span>${n===4?'2v2 lagspill':'Lagspill'} — vinnerlaget</span><span>+1p hver</span></div>`;
   } else {
-    activeDiv.classList.add('hidden');
-    newDiv.classList.remove('hidden');
+    activeDiv.style.display = 'none';
+    newDiv.style.display = 'flex';
   }
 }
 
@@ -886,22 +886,45 @@ function renderTournament(){
 
 function prepareNextRound(){
   const mr = tournament.maxRounds || maxRounds || 1;
-  if(tournament.rounds.length >= mr){ showTournament(); return; }
-  const np   = tournament.numPlayers || numPlayers || 3;
-  setupMaxRounds  = mr;
-  setupNumPlayers = np;
-  document.getElementById('maxRoundsDisplay').textContent = mr;
-  setPlayerCount(np);
+  if(tournament.rounds.length >= mr){ showChampion(); return; }
+
+  // Restore settings from tournament and start next round directly
+  const np    = tournament.numPlayers || numPlayers || 3;
   const names = tournament.players.length ? tournament.players : players;
-  ['p1','p2','p3','p4'].forEach((id,i) => { document.getElementById(id).value = names[i]||''; });
-  showScreen('setup');
+
+  players      = [...names].slice(0, np);
+  numPlayers   = np;
+  maxRounds    = mr;
+  scores       = new Array(np).fill(0);
+  hole         = 1;
+  history      = [];
+  showHist     = false;
+  hChoice      = null;
+  hResult      = null;
+  currentRound = tournament.rounds.length + 1;
+  roundName    = `Runde ${currentRound}`;
+
+  tournament.players    = [...players];
+  tournament.numPlayers = numPlayers;
+  tournament.maxRounds  = maxRounds;
+  saveTournament();
+  showScreen('game');
+  render();
 }
 
 function resumeCurrentOrSetup(){
-  if(tournament.currentGame){ restoreCurrentGame(tournament.currentGame); showScreen('game'); render(); return; }
+  // 1. Resume a game in progress
+  if(tournament.currentGame){
+    restoreCurrentGame(tournament.currentGame);
+    showScreen('game'); render(); return;
+  }
   const mr = tournament.maxRounds || maxRounds || 1;
-  if(tournament.rounds.length && tournament.rounds.length < mr){ prepareNextRound(); return; }
-  goSetup();
+  // 2. More rounds to play — go straight to next round
+  if(tournament.rounds.length < mr){
+    prepareNextRound(); return;
+  }
+  // 3. Tournament complete — show champion
+  showChampion();
 }
 
 function goSetup(){
@@ -916,8 +939,8 @@ function resetTournament(){
   hChoice=null; hResult=null; currentRound=1; roundName='Runde 1';
   numPlayers=3; maxRounds=1; setupNumPlayers=3; setupMaxRounds=1;
   // Show new-tournament mode
-  document.getElementById('setup-active').classList.add('hidden');
-  document.getElementById('setup-new').classList.remove('hidden');
+  document.getElementById('setup-active').style.display = 'none';
+  document.getElementById('setup-new').style.display = 'flex';
   setPlayerCount(3);
   document.getElementById('maxRoundsDisplay').textContent = 1;
   ['p1','p2','p3','p4'].forEach(id => { document.getElementById(id).value=''; });
