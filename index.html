@@ -186,43 +186,55 @@ button,input{font-family:'DM Mono',monospace}
     <div class="brand-sub">Gutta Krutt</div>
   </div>
 
-  <div class="setup-card">
-    <div class="setup-label">Antall spillere</div>
-    <div class="toggle-row">
-      <div class="count-btn active" id="btn3" onclick="setPlayerCount(3)">3 spillere</div>
-      <div class="count-btn" id="btn4" onclick="setPlayerCount(4)">4 spillere</div>
+  <!-- ACTIVE TOURNAMENT MODE -->
+  <div id="setup-active" class="hidden">
+    <div class="setup-card" style="width:100%;max-width:340px">
+      <div class="setup-label">Aktiv turnering</div>
+      <div id="active-players-display" style="font-size:16px;color:var(--text);margin-bottom:8px"></div>
+      <div id="active-rounds-display" style="font-size:12px;color:var(--muted)"></div>
     </div>
+    <div class="rules-box" id="rules-box-active"></div>
+    <button class="btn-primary" onclick="resumeCurrentOrSetup()">Fortsett turnering</button>
+    <button class="btn-secondary" onclick="showTournament()">Se sammendrag</button>
+    <button class="btn-secondary" onclick="showScreen('rules')">📖 Regler</button>
+    <button class="btn-danger" onclick="confirmNewTournament()">Avslutt og start ny turnering</button>
+    <div class="helper-text">Poeng er lagret og trygt. Trykk «Fortsett» for å spille videre.</div>
   </div>
 
-  <div class="setup-card">
-    <div class="setup-label">Antall runder i turneringen</div>
-    <div class="round-count-row">
-      <div class="round-count-btn" onclick="changeMaxRounds(-1)">−</div>
-      <div>
-        <div class="round-count-val" id="maxRoundsDisplay">1</div>
-        <div class="round-count-unit">runde(r)</div>
+  <!-- NEW TOURNAMENT MODE -->
+  <div id="setup-new">
+    <div class="setup-card" style="width:100%;max-width:340px">
+      <div class="setup-label">Antall spillere</div>
+      <div class="toggle-row">
+        <div class="count-btn active" id="btn3" onclick="setPlayerCount(3)">3 spillere</div>
+        <div class="count-btn" id="btn4" onclick="setPlayerCount(4)">4 spillere</div>
       </div>
-      <div class="round-count-btn" onclick="changeMaxRounds(1)">+</div>
     </div>
-  </div>
-
-  <div class="setup-card">
-    <div class="setup-label">Spillerrekkefølge hull 1</div>
-    <div class="player-input"><div class="player-num">1</div><input id="p1" type="text" placeholder="Spiller 1" maxlength="12" /></div>
-    <div class="player-input"><div class="player-num">2</div><input id="p2" type="text" placeholder="Spiller 2" maxlength="12" /></div>
-    <div class="player-input"><div class="player-num">3</div><input id="p3" type="text" placeholder="Spiller 3" maxlength="12" /></div>
-    <div class="player-input p4-row hidden-player" id="p4-row">
-      <div class="player-num">4</div><input id="p4" type="text" placeholder="Spiller 4" maxlength="12" />
+    <div class="setup-card" style="width:100%;max-width:340px">
+      <div class="setup-label">Antall runder i turneringen</div>
+      <div class="round-count-row">
+        <div class="round-count-btn" onclick="changeMaxRounds(-1)">−</div>
+        <div>
+          <div class="round-count-val" id="maxRoundsDisplay">1</div>
+          <div class="round-count-unit">runde(r)</div>
+        </div>
+        <div class="round-count-btn" onclick="changeMaxRounds(1)">+</div>
+      </div>
     </div>
+    <div class="setup-card" style="width:100%;max-width:340px">
+      <div class="setup-label">Spillerrekkefølge hull 1</div>
+      <div class="player-input"><div class="player-num">1</div><input id="p1" type="text" placeholder="Spiller 1" maxlength="12" /></div>
+      <div class="player-input"><div class="player-num">2</div><input id="p2" type="text" placeholder="Spiller 2" maxlength="12" /></div>
+      <div class="player-input"><div class="player-num">3</div><input id="p3" type="text" placeholder="Spiller 3" maxlength="12" /></div>
+      <div class="player-input p4-row hidden-player" id="p4-row">
+        <div class="player-num">4</div><input id="p4" type="text" placeholder="Spiller 4" maxlength="12" />
+      </div>
+    </div>
+    <div class="rules-box" id="rules-box"></div>
+    <button class="btn-primary" onclick="startGame()">Start turnering</button>
+    <button class="btn-secondary" onclick="showScreen('rules')">📖 Regler</button>
+    <div class="helper-text">Poeng lagres automatisk mellom runder og dager.</div>
   </div>
-
-  <div class="rules-box" id="rules-box"></div>
-
-  <button class="btn-primary" onclick="startGame()">Start runde</button>
-  <button class="btn-secondary" onclick="showTournament()">Se sammendrag</button>
-  <button class="btn-secondary" onclick="showScreen('rules')">📖 Regler</button>
-  <button class="btn-danger hidden" id="resetTournamentBtn" onclick="resetTournament()">Nullstill turnering</button>
-  <div class="helper-text">Poeng lagres automatisk mellom runder og dager.</div>
 </div>
 
 <div id="game" class="screen">
@@ -479,7 +491,42 @@ function restoreCurrentGame(g){
 
 function updateResetButton(){
   const hasData = (tournament.rounds && tournament.rounds.length) || tournament.currentGame;
-  document.getElementById('resetTournamentBtn').classList.toggle('hidden', !hasData);
+  const activeDiv = document.getElementById('setup-active');
+  const newDiv    = document.getElementById('setup-new');
+  if(!activeDiv || !newDiv) return;
+  if(hasData){
+    activeDiv.classList.remove('hidden');
+    newDiv.classList.add('hidden');
+    // Fill in active tournament info
+    const np = tournament.numPlayers || 3;
+    const mr = tournament.maxRounds || 1;
+    const completed = tournament.rounds ? tournament.rounds.length : 0;
+    const names = tournament.players.length ? tournament.players : [];
+    document.getElementById('active-players-display').textContent = names.join(' · ') || '';
+    document.getElementById('active-rounds-display').textContent =
+      `${completed} av ${mr} runder fullført · ${np} spillere`;
+    // Update rules box in active mode
+    const n = np;
+    const blind = n === 4 ? 5 : 4;
+    const lone  = n === 4 ? 4 : 3;
+    const wolf  = n === 4 ? 3 : 2;
+    const rb = document.getElementById('rules-box-active');
+    if(rb) rb.innerHTML = `
+      <div class="rules-title">Poengforklaring — ${n} spillere</div>
+      <div class="rules-row"><span>Blind Wolf vinner</span><span>+${blind}p</span></div>
+      <div class="rules-row"><span>Lone Wolf vinner</span><span>+${lone}p</span></div>
+      <div class="rules-row"><span>Wolf vinner</span><span>+${wolf}p</span></div>
+      <div class="rules-row"><span>Motstandere vinner vs solo</span><span>+1p hver</span></div>
+      <div class="rules-row"><span>${n===4?'2v2 lagspill':'Lagspill'} — vinnerlaget</span><span>+1p hver</span></div>`;
+  } else {
+    activeDiv.classList.add('hidden');
+    newDiv.classList.remove('hidden');
+  }
+}
+
+function confirmNewTournament(){
+  if(!confirm('Er du sikker? All lagret score fra denne turneringen slettes permanent.')) return;
+  resetTournament();
 }
 
 /* ── Game helpers ── */
@@ -858,25 +905,19 @@ function resumeCurrentOrSetup(){
 }
 
 function goSetup(){
-  const names = tournament.players.length ? tournament.players : players;
-  const np    = tournament.numPlayers || numPlayers || 3;
-  const mr    = tournament.maxRounds  || maxRounds  || 1;
-  setupNumPlayers = np;
-  setupMaxRounds  = mr;
-  document.getElementById('maxRoundsDisplay').textContent = mr;
-  setPlayerCount(np);
-  ['p1','p2','p3','p4'].forEach((id,i) => { document.getElementById(id).value = names[i]||''; });
+  updateResetButton(); // decides which mode to show
   showScreen('setup');
 }
 
 function resetTournament(){
-  if(!confirm('Nullstille hele turneringen og slette alle runder?')) return;
   localStorage.removeItem(STORAGE_KEY);
   tournament = defaultTournament();
   players=[]; scores=[]; hole=1; history=[]; showHist=false;
   hChoice=null; hResult=null; currentRound=1; roundName='Runde 1';
   numPlayers=3; maxRounds=1; setupNumPlayers=3; setupMaxRounds=1;
-  updateResetButton();
+  // Show new-tournament mode
+  document.getElementById('setup-active').classList.add('hidden');
+  document.getElementById('setup-new').classList.remove('hidden');
   setPlayerCount(3);
   document.getElementById('maxRoundsDisplay').textContent = 1;
   ['p1','p2','p3','p4'].forEach(id => { document.getElementById(id).value=''; });
@@ -1052,9 +1093,12 @@ window.onload = function(){
   const mr = tournament.maxRounds  || 1;
   setupNumPlayers = np;
   setupMaxRounds  = mr;
+  // Set up new-tournament fields in case they are shown
   setPlayerCount(np);
   document.getElementById('maxRoundsDisplay').textContent = mr;
   ['p1','p2','p3','p4'].forEach((id,i) => { document.getElementById(id).value = tournament.players[i]||''; });
+  // updateResetButton decides active vs new mode
+  updateResetButton();
   showScreen('setup');
 };
 </script>
