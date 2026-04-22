@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Wolf" />
 <meta name="theme-color" content="#111110" />
-<title>Wolf — Gentlemen of Belek</title>
+<title>Wolf — Gutta Krutt</title>
 <link rel="manifest" href="manifest.json" />
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
@@ -163,7 +163,7 @@ button,input{font-family:'DM Mono',monospace}
   <div>
     <img src="wolf-winner.png" class="hero-medal" alt="Wolf Winner" />
     <div class="brand-title">Wolf</div>
-    <div class="brand-sub">Gentlemen of Belek</div>
+    <div class="brand-sub">Gutta Krutt</div>
   </div>
 
   <div class="setup-card">
@@ -236,7 +236,7 @@ button,input{font-family:'DM Mono',monospace}
 <div id="finish" class="screen">
   <div>
     <div class="finish-title">Runde ferdig</div>
-    <div class="finish-sub">Gentlemen of Belek</div>
+    <div class="finish-sub">Gutta Krutt</div>
   </div>
   <div class="finish-scores" id="finish-scores"></div>
   <button class="btn-primary" onclick="showTournament()">Se samlet stilling</button>
@@ -265,7 +265,7 @@ button,input{font-family:'DM Mono',monospace}
 <div id="champion" class="screen">
   <div>
     <div class="finish-title">Wolf Champion</div>
-    <div class="finish-sub">Gentlemen of Belek</div>
+    <div class="finish-sub">Gutta Krutt</div>
   </div>
   <img src="wolf-winner.png" class="hero-medal champion-medal" alt="Wolf Winner" />
   <div class="finish-scores" id="champion-card"></div>
@@ -819,7 +819,7 @@ function buildSummaryText(){
   const totals    = computeTotals();
   const completed = tournament.rounds.length;
   const mr        = tournament.maxRounds || maxRounds || 1;
-  let lines = ['🐺 *WOLF — Gentlemen of Belek*',''];
+  let lines = ['🐺 *WOLF — Gutta Krutt*',''];
   if(completed>0){
     lines.push(`📊 *Sammenlagt etter ${completed} av ${mr} runder:*`);
     totals.forEach((p,idx) => lines.push(`${idx===0?'🏆 ':'   '}${p.name}: ${fmtScore(p.total)}`));
@@ -915,7 +915,7 @@ async function shareCanvasImage(canvas,filename,fallback){
     if(!blob){ showToast('Kunne ikke generere bilde'); return; }
     const file=new File([blob],filename,{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
-      await navigator.share({files:[file],title:'Wolf — Gentlemen of Belek'}); return;
+      await navigator.share({files:[file],title:'Wolf — Gutta Krutt'}); return;
     }
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -935,7 +935,7 @@ async function shareTournamentGraphic(){
   const mr=tournament.maxRounds||maxRounds||1;
   await shareCanvasImage(renderShareCanvas({
     title:'Wolf', subtitle:`${tournament.rounds.length} av ${mr} runder spilt`,
-    rows:totals.map(p=>({name:p.name,score:p.total})), meta:'Gentlemen of Belek · Tyrkia 2026'
+    rows:totals.map(p=>({name:p.name,score:p.total})), meta:'Gutta Krutt'
   }),'wolf-turnering.png',buildSummaryText());
 }
 
@@ -944,7 +944,7 @@ async function shareLiveGraphic(){
   const sorted=players.map((name,i)=>({name,score:scores[i]})).sort((a,b)=>b.score-a.score);
   await shareCanvasImage(renderShareCanvas({
     title:roundName, subtitle:`Hull ${Math.min(hole,18)} av 18 — Live`,
-    rows:sorted, meta:'Wolf · Gentlemen of Belek'
+    rows:sorted, meta:'Wolf · Gutta Krutt'
   }),'wolf-live.png',buildSummaryText());
 }
 
@@ -955,7 +955,7 @@ async function shareChampionGraphic(){
   await shareCanvasImage(renderShareCanvas({
     title:'Wolf Champion', subtitle:`${mr} runder spilt`,
     highlight:{name:totals[0].name,score:totals[0].total},
-    rows:totals.map(p=>({name:p.name,score:p.total})), meta:'Gentlemen of Belek · Tyrkia 2026'
+    rows:totals.map(p=>({name:p.name,score:p.total})), meta:'Gutta Krutt'
   }),'wolf-champion.png',buildSummaryText());
 }
 
