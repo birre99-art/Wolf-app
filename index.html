@@ -187,7 +187,7 @@ button,input{font-family:'DM Mono',monospace}
   </div>
 
   <!-- ACTIVE TOURNAMENT MODE -->
-  <div id="setup-active" class="hidden" style="display:none;flex-direction:column;align-items:center;gap:1.25rem;width:100%">
+  <div id="setup-active" style="display:none;flex-direction:column;align-items:center;gap:1.25rem;width:100%">
     <div class="setup-card" style="width:100%;max-width:340px">
       <div class="setup-label">Aktiv turnering</div>
       <div id="active-players-display" style="font-size:16px;color:var(--text);margin-bottom:8px"></div>
@@ -907,9 +907,11 @@ function prepareNextRound(){
 }
 
 function resumeCurrentOrSetup(){
-  // Always read maxRounds from tournament (persisted), not local variable
+  // Always reload from localStorage to ensure fresh state
+  loadTournament();
+
   const mr = tournament.maxRounds || 1;
-  maxRounds = mr; // sync local variable
+  maxRounds = mr;
 
   // 1. Resume a game in progress
   if(tournament.currentGame){
@@ -920,7 +922,7 @@ function resumeCurrentOrSetup(){
   if(tournament.rounds.length < mr){
     prepareNextRound(); return;
   }
-  // 3. Tournament complete — show champion
+  // 3. Tournament complete
   showChampion();
 }
 
