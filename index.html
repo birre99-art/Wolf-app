@@ -155,6 +155,26 @@ button,input{font-family:'DM Mono',monospace}
 
 .toast{position:fixed;bottom:env(safe-area-inset-bottom,16px);left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);color:var(--text);border:0.5px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;font-family:'DM Mono',monospace;z-index:9999;opacity:0;transition:all 0.3s ease;pointer-events:none;text-align:center;max-width:90vw}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Rules screen */
+#rules{align-items:center;padding:2rem 1.5rem;gap:1rem;overflow-y:auto}
+.rules-screen-title{font-family:'DM Serif Display',serif;font-size:36px;color:var(--gold);text-align:center}
+.rules-screen-sub{font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;text-align:center;margin-top:2px}
+.rules-section{width:100%;max-width:340px;background:var(--surface);border:0.5px solid var(--border);border-radius:16px;padding:1.25rem}
+.rules-section-title{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.rules-text{font-size:13px;color:var(--muted);line-height:1.7}
+.rules-text strong{color:var(--text)}
+.rules-type-row{display:flex;gap:10px;padding:8px 0;border-top:0.5px solid var(--border)}
+.rules-type-row:first-of-type{border-top:none;padding-top:0}
+.rules-type-icon{font-size:16px;flex-shrink:0;width:24px;text-align:center}
+.rules-type-body{}
+.rules-type-name{font-size:13px;color:var(--text);font-weight:500}
+.rules-type-desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.rules-pts-grid{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:center}
+.rules-pts-label{font-size:12px;color:var(--muted)}
+.rules-pts-val{font-size:13px;color:var(--gold);text-align:right;font-weight:500}
+.rules-pts-divider{grid-column:1/-1;height:0.5px;background:var(--border);margin:4px 0}
+.rules-pts-section-label{grid-column:1/-1;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
 </style>
 </head>
 <body>
@@ -200,6 +220,7 @@ button,input{font-family:'DM Mono',monospace}
 
   <button class="btn-primary" onclick="startGame()">Start runde</button>
   <button class="btn-secondary" onclick="showTournament()">Se sammendrag</button>
+  <button class="btn-secondary" onclick="showScreen('rules')">📖 Regler</button>
   <button class="btn-danger hidden" id="resetTournamentBtn" onclick="resetTournament()">Nullstill turnering</button>
   <div class="helper-text">Poeng lagres automatisk mellom runder og dager.</div>
 </div>
@@ -272,6 +293,65 @@ button,input{font-family:'DM Mono',monospace}
   <button class="btn-primary" onclick="shareChampionGraphic()">Del champion-bilde</button>
   <button class="btn-secondary" onclick="showTournament()">Se turneringssammendrag</button>
   <button class="btn-ghost" onclick="goSetup()">Til oppsett</button>
+</div>
+
+<div id="rules" class="screen">
+  <div>
+    <div class="rules-screen-title">🐺 Regler</div>
+    <div class="rules-screen-sub">Gutta Krutt · Wolf</div>
+  </div>
+
+  <div class="rules-section">
+    <div class="rules-section-title">Før start</div>
+    <div class="rules-text">
+      Rekkefølgen <strong>trekkes tilfeldig</strong> før første hull og er fast gjennom hele runden.<br><br>
+      Den som er <strong>først i rekkefølgen er styrer</strong> på hull 1, deretter rullerer det hull for hull.<br><br>
+      Styreren slår ut <strong>først</strong> på hvert hull. Den med flest poeng etter 18 hull vinner. Ved delt hull deles <strong>ingen poeng</strong> ut.
+    </div>
+  </div>
+
+  <div class="rules-section">
+    <div class="rules-section-title">Slik velger styreren</div>
+    <div class="rules-type-row">
+      <div class="rules-type-icon">🔴</div>
+      <div class="rules-type-body"><div class="rules-type-name">Blind Wolf</div><div class="rules-type-desc">Erklæres <strong>før</strong> styreren selv slår. Går solo mot alle.</div></div>
+    </div>
+    <div class="rules-type-row">
+      <div class="rules-type-icon">🟡</div>
+      <div class="rules-type-body"><div class="rules-type-name">Lone Wolf</div><div class="rules-type-desc">Erklæres <strong>etter</strong> eget utslag, men før de andre slår. Går solo mot alle.</div></div>
+    </div>
+    <div class="rules-type-row">
+      <div class="rules-type-icon">⚪</div>
+      <div class="rules-type-body"><div class="rules-type-name">Wolf</div><div class="rules-type-desc">Styreren har ikke valgt partner innen alle andre har slått — går automatisk solo.</div></div>
+    </div>
+    <div class="rules-type-row">
+      <div class="rules-type-icon">🟢</div>
+      <div class="rules-type-body"><div class="rules-type-name">Partner</div><div class="rules-type-desc">Styreren velger en medspiller <strong>umiddelbart etter at vedkommende har slått</strong>. Man kan ikke vente og se de andre slå først!</div></div>
+    </div>
+  </div>
+
+  <div class="rules-section">
+    <div class="rules-section-title">Poeng</div>
+    <div class="rules-pts-grid">
+      <div class="rules-pts-section-label">3 spillere</div>
+      <div class="rules-pts-label">Blind Wolf vinner</div><div class="rules-pts-val">+4p</div>
+      <div class="rules-pts-label">Lone Wolf vinner</div><div class="rules-pts-val">+3p</div>
+      <div class="rules-pts-label">Wolf vinner</div><div class="rules-pts-val">+2p</div>
+      <div class="rules-pts-label">Motstandere vinner</div><div class="rules-pts-val">+1p hver</div>
+      <div class="rules-pts-label">Partner vinner</div><div class="rules-pts-val">+1p hver</div>
+      <div class="rules-pts-label">Delt hull</div><div class="rules-pts-val">0p</div>
+      <div class="rules-pts-divider"></div>
+      <div class="rules-pts-section-label">4 spillere</div>
+      <div class="rules-pts-label">Blind Wolf vinner</div><div class="rules-pts-val">+5p</div>
+      <div class="rules-pts-label">Lone Wolf vinner</div><div class="rules-pts-val">+4p</div>
+      <div class="rules-pts-label">Wolf vinner</div><div class="rules-pts-val">+3p</div>
+      <div class="rules-pts-label">Motstandere vinner</div><div class="rules-pts-val">+1p hver</div>
+      <div class="rules-pts-label">Partner (2v2) vinner</div><div class="rules-pts-val">+1p hver</div>
+      <div class="rules-pts-label">Delt hull</div><div class="rules-pts-val">0p</div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="goSetup()">Tilbake</button>
 </div>
 
 <div id="toast" class="toast"></div>
