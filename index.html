@@ -26,13 +26,12 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 *{-webkit-overflow-scrolling:touch}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;overflow:hidden}
-#setup.active{overflow-y:auto!important;height:auto!important;min-height:100dvh!important;}
 button,input{font-family:'DM Mono',monospace}
 .screen{display:none;flex-direction:column;height:100dvh;padding:env(safe-area-inset-top,20px) 0 env(safe-area-inset-bottom,16px)}
-#setup{height:auto;min-height:100dvh;}
+#setup{height:100dvh;overflow-y:scroll;-webkit-overflow-scrolling:touch;}
 .screen.active{display:flex}
 
-#setup{align-items:center;justify-content:flex-start;padding:0.75rem 1rem 1.5rem;gap:0.75rem;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#setup{align-items:center;justify-content:flex-start;padding:0.75rem 1rem 1.5rem;gap:0.75rem;overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .brand-title{font-family:'DM Serif Display',serif;font-size:38px;color:var(--gold);text-align:center}
 .brand-sub{font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;text-align:center;margin-top:4px}
 .hero-medal{width:110px;display:block;margin:4px auto;border-radius:0;object-fit:contain}
@@ -629,7 +628,7 @@ function showScreen(id){
   const el = document.getElementById(id);
   el.classList.add('active');
   el.scrollTop = 0;
-  window.scrollTo(0,0);
+  setTimeout(() => { el.scrollTop = 0; }, 50);
 }
 
 /* ── Render ── */
