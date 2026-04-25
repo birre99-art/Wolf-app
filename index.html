@@ -12,10 +12,14 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZ0KNHP0J"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);} 
+try {
   gtag('js', new Date());
   gtag('config', 'G-QEZ0KNHP0J');
+} catch(e) {
+  console.warn('GA failed', e);
+}
 </script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
@@ -312,7 +316,7 @@ button,input{font-family:'DM Mono',monospace}
     <button class="btn-primary" onclick="startGame()">Start game</button>
     <button class="btn-secondary" onclick="showScreen('rules')">📖 Rules</button>
     <button class="btn-secondary" onclick="shareApp()">📤 Share app</button>
-    <div class="helper-text">Scores are saved automatically between rounds and days.</div>
+    <div class="helper-text">Scores are saved automatically between rounds and days.<br><br><span style="font-size:10px;opacity:0.7">This app uses Google Analytics to collect anonymous usage data to improve the experience. No personal data is stored.</span></div>
   </div>
 </div>
 
