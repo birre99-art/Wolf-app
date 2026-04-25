@@ -1654,11 +1654,19 @@ async function shareChampionGraphic(){
 }
 
 function shareApp(){
-  const text = "🐺 Wolf Score - simple app for playing Wolf in golf\n\nUse it here:";
+  const text = "🐺 Wolf Score - simple app for playing Wolf in golf\\n\\nUse it here:";
   const url = window.location.origin + window.location.pathname;
 
   if(navigator.share){
     navigator.share({ title:"Wolf Score", text, url }).catch(() => {});
+  } else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url)
+      .then(() => showToast("Link copied ✓"))
+      .catch(() => showToast("Copy this link: " + url));
+  } else {
+    showToast("Copy this link: " + url);
+  }
+}).catch(() => {});
   } else if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(url)
       .then(() => showToast("Link copied ✓"))
