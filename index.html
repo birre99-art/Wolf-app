@@ -478,7 +478,7 @@ function savePlayersToHistory(names){
     if(i >= 0) saved.splice(i,1);
     saved.unshift(t);
   });
-  localStorage.setItem(PLAYERS_KEY, JSON.stringify(saved.slice(0,12)));
+  localStorage.setItem(PLAYERS_KEY, JSON.stringify(saved.slice(0,8)));
 }
 function renderSavedPlayerChips(){
   const saved = loadSavedPlayers();
@@ -488,7 +488,7 @@ function renderSavedPlayerChips(){
   if(!saved.length){ sec.style.display='none'; return; }
   sec.style.display='block';
   wrap.innerHTML = saved.map(name =>
-    `<div class="player-chip" onclick="fillNextPlayer(${JSON.stringify(name)})">${name}</div>`
+    `<div class="player-chip" onclick="fillNextPlayer('${name.replace(/'/g,"\\'")}')">${name}</div>`
   ).join('');
 }
 function fillNextPlayer(name){
