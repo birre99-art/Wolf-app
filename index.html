@@ -287,6 +287,13 @@ button,input{font-family:'DM Mono',monospace}
         <div class="bet-btn" id="bet-money" onclick="setBetting(true)">💰 Play for money</div>
       </div>
       <div id="bet-amount-section" style="display:none;margin-top:12px">
+        <div id="carry-pot-row" style="display:none;margin-top:12px">
+          <div class="bet-label">Carry pot on ties</div>
+          <div class="bet-toggle-row">
+            <div class="bet-btn active" id="carry-off" onclick="setCarryPot(false)">Off</div>
+            <div class="bet-btn" id="carry-on" onclick="setCarryPot(true)">On</div>
+          </div>
+        </div>
         <div class="bet-label">Dollar value per point</div>
         <div class="bet-amounts">
           <div class="bet-amount-btn active" id="ba-1" onclick="setBetAmount(1)">$1</div>
@@ -304,6 +311,7 @@ button,input{font-family:'DM Mono',monospace}
     <div class="rules-box" id="rules-box"></div>
     <button class="btn-primary" onclick="startGame()">Start game</button>
     <button class="btn-secondary" onclick="showScreen('rules')">📖 Rules</button>
+    <button class="btn-secondary" onclick="shareApp()">📤 Share app</button>
     <div class="helper-text">Scores are saved automatically between rounds and days.</div>
   </div>
 </div>
@@ -313,6 +321,7 @@ button,input{font-family:'DM Mono',monospace}
     <div>
       <div class="hole-tag">Hole</div>
       <div class="hole-num" id="g-hole">1</div>
+      <div id="game-mode" style="margin-top:6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)"></div>
     </div>
     <div class="ctrl-block">
       <div class="ctrl-tag">Honor</div>
@@ -491,6 +500,8 @@ let betPerPoint = 1;
 let setupPlayForMoney = false;
 let setupBetPerPoint = 1;
 let setupSettlementType = 'winner';
+let setupCarryPot = false;
+let carryPot = 0;
 let settlementType = 'winner';
 
 let players = [];
@@ -539,6 +550,8 @@ function setBetting(val){
   document.getElementById('bet-fun').classList.toggle('active', !val);
   document.getElementById('bet-money').classList.toggle('active', val);
   document.getElementById('bet-amount-section').style.display = val ? 'block' : 'none';
+  const carryRow = document.getElementById('carry-pot-row');
+  if(carryRow) carryRow.style.display = val ? 'flex' : 'none';
   renderRulesBox();
 }
 
@@ -549,6 +562,7 @@ function setBetAmount(amount){
     const el = document.getElementById('ba-'+a);
     if(el) el.classList.toggle('active', a === amount);
   });
+  renderRulesBox();
 }
 
 function setCustomBet(val){
@@ -559,8 +573,17 @@ function setCustomBet(val){
       const el = document.getElementById('ba-'+a);
       if(el) el.classList.remove('active');
     });
+    renderRulesBox();
   }
 }
+
+function setCarryPot(val){
+  setupCarryPot = val;
+  document.getElementById('carry-off').classList.toggle('active', !val);
+  document.getElementById('carry-on').classList.toggle('active', val);
+  renderRulesBox();
+}
+
 
 function soloPts(mode){
   if(numPlayers === 4){
@@ -593,7 +616,7 @@ function renderRulesBox(){
       <div class="rules-row"><span>Wolf wins</span><span>${n===4?'+3x':' +2x'} stake from each</span></div>
       <div class="rules-row"><span>Solo Wolf loses</span><span>-1x stake to each</span></div>
       <div class="rules-row"><span>${n===3?'Lone player wins vs pair':'Winning side in partner play'}</span><span>${n===3?'+2x / -2x':'±1x each'}</span></div>
-      <div class="rules-row"><span>Tied hole</span><span>$0</span></div>`;
+      <div class="rules-row"><span>Tied hole</span><span>${setupCarryPot ? `carry +${fmtMoney(setupBetPerPoint * n)}` : '$0'}</span></div>`;
     return;
   }
 
@@ -618,7 +641,7 @@ function showToast(msg, duration=2500){
 function defaultTournament(){
   return {
     players:[], numPlayers:3, maxRounds:1, rounds:[], currentGame:null,
-    playForMoney:false, betPerPoint:1, settlementType:'winner'
+    playForMoney:false, betPerPoint:1, settlementType:'winner', setupCarryPot:false
   };
 }
 
@@ -626,6 +649,7 @@ function saveTournament(){
   tournament.playForMoney = playForMoney;
   tournament.betPerPoint = betPerPoint;
   tournament.settlementType = settlementType;
+  tournament.setupCarryPot = setupCarryPot;
   tournament.currentGame = isGameInProgress() ? snapshotCurrentGame() : null;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tournament));
   updateResetButton();
@@ -643,6 +667,7 @@ function loadTournament(){
   if(!('playForMoney' in tournament)) tournament.playForMoney = false;
   if(!('betPerPoint' in tournament)) tournament.betPerPoint = 1;
   if(!('settlementType' in tournament)) tournament.settlementType = 'winner';
+  if(!('setupCarryPot' in tournament)) tournament.setupCarryPot = false;
   updateResetButton();
 }
 
@@ -652,7 +677,7 @@ function snapshotCurrentGame(){
   return {
     players:[...players], numPlayers, scores:[...scores], moneyBalances:[...moneyBalances], hole,
     history:JSON.parse(JSON.stringify(history)), showHist, hChoice, hResult,
-    currentRound, roundName, maxRounds, playForMoney, betPerPoint, settlementType
+    currentRound, roundName, maxRounds, playForMoney, betPerPoint, settlementType, setupCarryPot, carryPot
   };
 }
 
@@ -672,6 +697,8 @@ function restoreCurrentGame(g){
   playForMoney = g.playForMoney || false;
   betPerPoint = g.betPerPoint || 1;
   settlementType = g.settlementType || 'winner';
+  setupCarryPot = g.setupCarryPot || false;
+  carryPot = g.carryPot || 0;
   document.getElementById('hist-area').style.display = history.length ? 'block' : 'none';
   document.getElementById('hist-count').textContent = history.length;
   renderHistList();
@@ -793,6 +820,8 @@ function startGame(){
   numPlayers = setupNumPlayers;
   maxRounds = setupMaxRounds;
   playForMoney = setupPlayForMoney;
+  setupCarryPot = setupCarryPot;
+  carryPot = 0;
   betPerPoint = setupBetPerPoint;
   settlementType = setupSettlementType;
   scores = new Array(numPlayers).fill(0);
@@ -846,7 +875,7 @@ function renderRulesScreen(){
         <div class="rules-pts-section-label">${n===3?'3 players — partner chosen':'4 players — partner play'}</div>
         <div class="rules-pts-label">${n===3?'Lone player wins':'Winning side'}</div><div class="rules-pts-val">${n===3?'2x stake total':'1x stake each'}</div>
         <div class="rules-pts-label">${n===3?'Lone player loses':'Losing side'}</div><div class="rules-pts-val">${n===3?'-2x stake total':'-1x stake each'}</div>
-        <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">$0</div>
+        <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">${setupCarryPot ? `carry ${fmtMoney(setupBetPerPoint * n)}` : '$0'}</div>
       </div>`;
     return;
   }
@@ -876,6 +905,15 @@ function renderRulesScreen(){
 }
 
 function render(){
+  const modeEl = document.getElementById('game-mode');
+  if(modeEl){
+    if(playForMoney){
+      const carryText = setupCarryPot ? ` · Carry pot ${fmtMoney(carryPot)}` : '';
+      modeEl.innerHTML = `💰 Money game · $${betPerPoint}/pt${carryText}`;
+    } else {
+      modeEl.innerHTML = `🎯 Points game`;
+    }
+  }
   renderScores();
   renderChoices();
 }
@@ -974,8 +1012,8 @@ function renderChoices(){
         <div class="rb-pts green">+1p each</div>
       </div>
       <div class="result-btn r-draw ${hResult==='draw'?'selected':''}" onclick="setRes('draw')">
-        <div><div class="rb-tag draw-tag">Tied</div><div class="rb-names">No points</div></div>
-        <div class="rb-pts muted">0p</div>
+        <div><div class="rb-tag draw-tag">Tied</div><div class="rb-names">${playForMoney && setupCarryPot ? 'Carry pot forward' : 'No points'}</div></div>
+        <div class="rb-pts muted">${playForMoney && setupCarryPot ? `+${fmtMoney(betPerPoint * numPlayers)} pot` : (playForMoney ? '$0' : '0p')}</div>
       </div>
     </div>
     ${hResult ? `<button class="confirm-btn" onclick="confirmHole()">Confirm hole ${hole}</button>` : ''}`;
@@ -987,37 +1025,66 @@ function setRes(r){ hResult = r; saveTournament(); render(); }
 function calcHoleMoneyChanges(changes, info, resultType){
   const delta = new Array(numPlayers).fill(0);
   if(!playForMoney) return delta;
-  if(!info || resultType === 'draw') return delta;
+  if(!info) return delta;
+
+  // If the hole is tied, no money changes hands now.
+  // Optional carry pot: carry the full hole pot forward.
+  if(resultType === 'draw'){
+    if(setupCarryPot) carryPot += betPerPoint * numPlayers;
+    return delta;
+  }
+
+  const potBonus = carryPot;
+  carryPot = 0;
+
+  let winners = [];
+  let losers = [];
 
   if(info.isSolo){
-    const multiplier = resultType === 'wolf' ? info.pts : 1;
     if(resultType === 'wolf'){
-      info.partnerSide.forEach(i => { delta[i] -= multiplier * betPerPoint; });
-      delta[info.wolfIdx] += multiplier * betPerPoint * info.partnerSide.length;
+      const multiplier = info.pts;
+      winners = [info.wolfIdx];
+      losers = [...info.partnerSide];
+      losers.forEach(i => { delta[i] -= multiplier * betPerPoint; });
+      delta[info.wolfIdx] += multiplier * betPerPoint * losers.length;
     } else {
-      delta[info.wolfIdx] -= betPerPoint * info.partnerSide.length;
-      info.partnerSide.forEach(i => { delta[i] += betPerPoint; });
+      winners = [...info.partnerSide];
+      losers = [info.wolfIdx];
+      losers.forEach(i => { delta[i] -= betPerPoint * winners.length; });
+      winners.forEach(i => { delta[i] += betPerPoint; });
     }
   } else {
     if(numPlayers === 3){
       const loneIdx = info.wolfSide[0];
-      const partnerIdxs = info.partnerSide;
+      const partnerIdxs = [...info.partnerSide];
       if(resultType === 'wolf'){
+        winners = [loneIdx];
+        losers = partnerIdxs;
         delta[loneIdx] += 2 * betPerPoint;
         partnerIdxs.forEach(i => { delta[i] -= betPerPoint; });
       } else {
+        winners = partnerIdxs;
+        losers = [loneIdx];
         delta[loneIdx] -= 2 * betPerPoint;
         partnerIdxs.forEach(i => { delta[i] += betPerPoint; });
       }
     } else {
       if(resultType === 'wolf'){
-        info.partnerSide.forEach(i => { delta[i] -= betPerPoint; });
-        info.wolfSide.forEach(i => { delta[i] += betPerPoint * info.partnerSide.length / info.wolfSide.length; });
+        winners = [...info.wolfSide];
+        losers = [...info.partnerSide];
       } else {
-        info.wolfSide.forEach(i => { delta[i] -= betPerPoint; });
-        info.partnerSide.forEach(i => { delta[i] += betPerPoint * info.wolfSide.length / info.partnerSide.length; });
+        winners = [...info.partnerSide];
+        losers = [...info.wolfSide];
       }
+      losers.forEach(i => { delta[i] -= betPerPoint; });
+      winners.forEach(i => { delta[i] += betPerPoint; });
     }
+  }
+
+  // Add carried pot as a true zero-sum transfer from losers to winners.
+  if(potBonus > 0 && winners.length && losers.length){
+    winners.forEach(i => { delta[i] += potBonus / winners.length; });
+    losers.forEach(i => { delta[i] -= potBonus / losers.length; });
   }
 
   let out = delta.map(roundMoney);
@@ -1061,6 +1128,7 @@ function confirmHole(){
     desc = 'Tied';
   }
 
+  const carryPotBefore = carryPot;
   const moneyChanges = calcHoleMoneyChanges(changes, info, hResult);
   scores = scores.map((s,i) => s + changes[i]);
   moneyBalances = moneyBalances.map((m,i) => roundMoney(m + moneyChanges[i]));
@@ -1073,7 +1141,7 @@ function confirmHole(){
 
   history.push({
     hole, wolfSide:[...info.wolfSide], partnerSide:[...info.partnerSide], mode:modeLabel,
-    desc, changes:[...changes], moneyChanges:[...moneyChanges]
+    desc, changes:[...changes], moneyChanges:[...moneyChanges], carryPotBefore, carryPotAfter: carryPot, carriedApplied: carryPotBefore > 0 && hResult !== 'draw'
   });
 
   hole++;
@@ -1099,6 +1167,7 @@ function undoHole(){
   const last = history.pop();
   scores = scores.map((s,i) => s - last.changes[i]);
   moneyBalances = moneyBalances.map((m,i) => roundMoney(m - (last.moneyChanges?.[i] || 0)));
+  carryPot = last.carryPotBefore ?? carryPot;
   hole = last.hole;
   hChoice = null;
   hResult = null;
@@ -1584,6 +1653,21 @@ async function shareChampionGraphic(){
   }),'wolf-champion.png',buildSummaryText());
 }
 
+function shareApp(){
+  const text = "🐺 Wolf Score – enkel app for Wolf i golf
+
+Bruk den her:";
+  const url = window.location.href;
+
+  if(navigator.share){
+    navigator.share({ title:"Wolf Score", text, url }).catch(() => {});
+  } else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(() => showToast("Link copied ✓"));
+  } else {
+    showToast("Copy this link: " + url);
+  }
+}
+
 window.onload = function(){
   try{
     loadTournament();
@@ -1594,9 +1678,11 @@ window.onload = function(){
     setupPlayForMoney = playForMoney;
     setupBetPerPoint = betPerPoint;
     setupSettlementType = settlementType;
+    setupCarryPot = tournament.setupCarryPot || false;
 
     setBetting(setupPlayForMoney);
     setSettlementType(setupSettlementType);
+    setCarryPot(setupCarryPot);
     setBetAmount(setupBetPerPoint);
 
     if(tournament.currentGame){
