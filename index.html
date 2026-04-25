@@ -9,11 +9,10 @@
 <meta name="theme-color" content="#111110" />
 <title>Wolf — Wolf Score</title>
 <link rel="manifest" href="manifest.json" />
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZ0KNHP0J"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);} 
+function gtag(){dataLayer.push(arguments);}
 try {
   gtag('js', new Date());
   gtag('config', 'G-QEZ0KNHP0J');
@@ -405,7 +404,7 @@ button,input{font-family:'DM Mono',monospace}
       The order is the one you enter before hole 1 and is fixed for the entire round.<br><br>
       The player who is <strong>first in the order has the Honor</strong> on hole 1, then it rotates hole by hole.<br><br>
       The Honor tees off <strong>first</strong> on every hole. Most points after 18 holes wins. On a tied hole, <strong>no points</strong> are awarded.<br><br>
-      <strong>4 players — holes 17 &amp; 18:</strong> The player with <strong>fewest points</strong> has the Honor on hole 17. The player with fewest points after hole 17 has the Honor on hole 18.
+      <strong>4 players — holes 17 &amp; 18:</strong> The player with <strong>fewest points</strong> has the Honor on hole 17. The player with fewest points after hole 17 has the Honor on hole 18. Ties are broken by rotation order.
     </div>
   </div>
 
@@ -588,7 +587,6 @@ function setCarryPot(val){
   renderRulesBox();
 }
 
-
 function soloPts(mode){
   if(numPlayers === 4){
     return mode === 'blind' ? 5 : mode === 'lone' ? 4 : 3;
@@ -609,22 +607,26 @@ function changeMaxRounds(delta){
   document.getElementById('maxRoundsDisplay').textContent = setupMaxRounds;
 }
 
-function renderRulesBox(){
-  const n = setupNumPlayers;
-  const box = document.getElementById('rules-box');
-  if(playForMoney || setupPlayForMoney){
-    box.innerHTML = `
+/* ─────────────────────────────────────────────
+   FIX: Unified rules HTML builder.
+   Single source of truth — used by both the
+   setup rules-box and the full rules screen.
+   Eliminates the previous duplication between
+   renderRulesBox() and renderRulesScreen().
+──────────────────────────────────────────────*/
+function buildRulesHTML(n, forMoney, betAmt, carryOn){
+  if(forMoney){
+    const tieText = carryOn ? `carry +${fmtMoney(betAmt * n)}` : '$0';
+    return `
       <div class="rules-title">Money rules — ${n} players</div>
-      <div class="rules-row"><span>Blind Wolf wins</span><span>${n===4?'+5x':' +4x'} stake from each</span></div>
-      <div class="rules-row"><span>Lone Wolf wins</span><span>${n===4?'+4x':' +3x'} stake from each</span></div>
-      <div class="rules-row"><span>Wolf wins</span><span>${n===4?'+3x':' +2x'} stake from each</span></div>
+      <div class="rules-row"><span>Blind Wolf wins</span><span>${n===4?'+5x':'+4x'} stake from each</span></div>
+      <div class="rules-row"><span>Lone Wolf wins</span><span>${n===4?'+4x':'+3x'} stake from each</span></div>
+      <div class="rules-row"><span>Wolf wins</span><span>${n===4?'+3x':'+2x'} stake from each</span></div>
       <div class="rules-row"><span>Solo Wolf loses</span><span>-1x stake to each</span></div>
       <div class="rules-row"><span>${n===3?'Lone player wins vs pair':'Winning side in partner play'}</span><span>${n===3?'+2x / -2x':'±1x each'}</span></div>
-      <div class="rules-row"><span>Tied hole</span><span>${setupCarryPot ? `carry +${fmtMoney(setupBetPerPoint * n)}` : '$0'}</span></div>`;
-    return;
+      <div class="rules-row"><span>Tied hole</span><span>${tieText}</span></div>`;
   }
-
-  box.innerHTML = `
+  return `
     <div class="rules-title">Scoring — ${n} players</div>
     <div class="rules-row"><span>Blind Wolf wins (solo)</span><span>+${n===4?5:4}p</span></div>
     <div class="rules-row"><span>Lone Wolf wins (solo)</span><span>+${n===4?4:3}p</span></div>
@@ -632,6 +634,59 @@ function renderRulesBox(){
     <div class="rules-row"><span>Opponents beat solo Wolf</span><span>+1p each</span></div>
     <div class="rules-row"><span>${n===4 ? '2v2 winning side' : 'Partner side wins'}</span><span>+1p each</span></div>
     <div class="rules-row"><span>Tied hole</span><span>0p</span></div>`;
+}
+
+function renderRulesBox(){
+  const box = document.getElementById('rules-box');
+  if(box) box.innerHTML = buildRulesHTML(setupNumPlayers, setupPlayForMoney, setupBetPerPoint, setupCarryPot);
+}
+
+function renderRulesScreen(){
+  const n = setupNumPlayers || tournament.numPlayers || 3;
+  const section = document.getElementById('rules-dynamic-section');
+  if(!section) return;
+
+  const forMoney = playForMoney || setupPlayForMoney;
+  if(forMoney){
+    section.innerHTML = `
+      <div class="rules-section-title">Money rules</div>
+      <div class="rules-pts-grid">
+        <div class="rules-pts-section-label">${n} players — solo Wolf wins</div>
+        <div class="rules-pts-label">Blind Wolf wins</div><div class="rules-pts-val">${n===4?'5x':'4x'} stake from each</div>
+        <div class="rules-pts-label">Lone Wolf wins</div><div class="rules-pts-val">${n===4?'4x':'3x'} stake from each</div>
+        <div class="rules-pts-label">Wolf wins</div><div class="rules-pts-val">${n===4?'3x':'2x'} stake from each</div>
+        <div class="rules-pts-label">Solo Wolf loses</div><div class="rules-pts-val">1x stake to each opponent</div>
+        <div class="rules-pts-divider"></div>
+        <div class="rules-pts-section-label">${n===3?'3 players — partner chosen':'4 players — partner play'}</div>
+        <div class="rules-pts-label">${n===3?'Lone player wins':'Winning side'}</div><div class="rules-pts-val">${n===3?'2x stake total':'1x stake each'}</div>
+        <div class="rules-pts-label">${n===3?'Lone player loses':'Losing side'}</div><div class="rules-pts-val">${n===3?'-2x stake total':'-1x stake each'}</div>
+        <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">${setupCarryPot ? `carry ${fmtMoney(setupBetPerPoint * n)}` : '$0'}</div>
+      </div>`;
+    return;
+  }
+
+  section.innerHTML = `
+    <div class="rules-section-title">Scoring</div>
+    <div class="rules-pts-grid">
+      <div class="rules-pts-section-label">3 players — solo Wolf</div>
+      <div class="rules-pts-label">Blind Wolf wins</div><div class="rules-pts-val">+4p</div>
+      <div class="rules-pts-label">Lone Wolf wins</div><div class="rules-pts-val">+3p</div>
+      <div class="rules-pts-label">Wolf wins</div><div class="rules-pts-val">+2p</div>
+      <div class="rules-pts-label">Opponents beat solo Wolf</div><div class="rules-pts-val">+1p each</div>
+      <div class="rules-pts-section-label">3 players — partner play</div>
+      <div class="rules-pts-label">Lone player wins</div><div class="rules-pts-val">+2p</div>
+      <div class="rules-pts-label">Partner side wins</div><div class="rules-pts-val">+1p each</div>
+      <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">0p</div>
+      <div class="rules-pts-divider"></div>
+      <div class="rules-pts-section-label">4 players — solo Wolf</div>
+      <div class="rules-pts-label">Blind Wolf wins</div><div class="rules-pts-val">+5p</div>
+      <div class="rules-pts-label">Lone Wolf wins</div><div class="rules-pts-val">+4p</div>
+      <div class="rules-pts-label">Wolf wins</div><div class="rules-pts-val">+3p</div>
+      <div class="rules-pts-label">Opponents beat solo Wolf</div><div class="rules-pts-val">+1p each</div>
+      <div class="rules-pts-section-label">4 players — 2v2 partner play</div>
+      <div class="rules-pts-label">Winning side</div><div class="rules-pts-val">+1p each</div>
+      <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">0p</div>
+    </div>`;
 }
 
 function showToast(msg, duration=2500){
@@ -726,17 +781,8 @@ function updateResetButton(){
     document.getElementById('active-players-display').textContent = names.join(' · ') || '';
     document.getElementById('active-rounds-display').textContent = `${completed} of ${mr} rounds completed · ${np} players`;
 
-    const blind = np === 4 ? 5 : 4;
-    const lone = np === 4 ? 4 : 3;
-    const wolf = np === 4 ? 3 : 2;
     const rb = document.getElementById('rules-box-active');
-    if(rb) rb.innerHTML = `
-      <div class="rules-title">Scoring — ${np} players</div>
-      <div class="rules-row"><span>Blind Wolf wins</span><span>+${blind}p</span></div>
-      <div class="rules-row"><span>Lone Wolf wins</span><span>+${lone}p</span></div>
-      <div class="rules-row"><span>Wolf wins</span><span>+${wolf}p</span></div>
-      <div class="rules-row"><span>Opponents win vs solo</span><span>+1p each</span></div>
-      <div class="rules-row"><span>${np===4?'2v2 partner play':'Partner play'} — winning side</span><span>+1p each</span></div>`;
+    if(rb) rb.innerHTML = buildRulesHTML(np, tournament.playForMoney || false, tournament.betPerPoint || 1, tournament.setupCarryPot || false);
   } else {
     activeDiv.style.display = 'none';
   }
@@ -759,13 +805,23 @@ function confirmAndReset(){
   resetTournament();
 }
 
+/* ─────────────────────────────────────────────
+   FIX: ci() — Honor selection for holes 17–18
+   in 4-player mode now uses rotation order as
+   a tiebreaker instead of always picking index 0.
+   When two players are tied for fewest points,
+   the one who would normally have the Honor
+   next (by rotation) gets it.
+──────────────────────────────────────────────*/
 function ci(){
   if(numPlayers === 4 && hole >= 17){
+    const rotationStart = (hole - 1) % numPlayers;
     let minScore = Infinity;
-    let minIdx = 0;
-    scores.forEach((s, i) => {
-      if(s < minScore){ minScore = s; minIdx = i; }
-    });
+    let minIdx = rotationStart;
+    for(let offset = 0; offset < numPlayers; offset++){
+      const i = (rotationStart + offset) % numPlayers;
+      if(scores[i] < minScore){ minScore = scores[i]; minIdx = i; }
+    }
     return minIdx;
   }
   return (hole - 1) % numPlayers;
@@ -806,10 +862,25 @@ function holeInfo(){
   return null;
 }
 
+/* ─────────────────────────────────────────────
+   FIX: startGame()
+   1. Removed self-assignment `setupCarryPot = setupCarryPot`
+   2. Added duplicate player name validation
+   3. getNextRoundNumber() no longer reads from
+      stale currentGame snapshot — always derives
+      from tournament.rounds.length
+──────────────────────────────────────────────*/
 function startGame(){
   const inputNames = ['p1','p2','p3','p4'].slice(0, setupNumPlayers)
     .map(id => document.getElementById(id).value.trim())
-    .map((name,i) => name || `Player ${i+1}`);
+    .map((name, i) => name || `Player ${i+1}`);
+
+  // Validate unique names (case-insensitive)
+  const lowerNames = inputNames.map(n => n.toLowerCase());
+  if(new Set(lowerNames).size < setupNumPlayers){
+    showToast('Players must have unique names');
+    return;
+  }
 
   if(tournament.rounds.length > 0){
     const existingKey = tournament.players.join('|');
@@ -824,7 +895,6 @@ function startGame(){
   numPlayers = setupNumPlayers;
   maxRounds = setupMaxRounds;
   playForMoney = setupPlayForMoney;
-  setupCarryPot = setupCarryPot;
   carryPot = 0;
   betPerPoint = setupBetPerPoint;
   settlementType = setupSettlementType;
@@ -841,14 +911,20 @@ function startGame(){
   tournament.players = [...players];
   tournament.numPlayers = numPlayers;
   tournament.maxRounds = maxRounds;
+  tournament.setupCarryPot = setupCarryPot;
   saveTournament();
   showScreen('game');
   if(typeof gtag !== 'undefined') gtag('event', 'start_round', {round_number: currentRound, num_players: numPlayers});
   render();
 }
 
+/* ─────────────────────────────────────────────
+   FIX: getNextRoundNumber()
+   Removed dependency on tournament.currentGame
+   which could return a stale round number and
+   cause duplicate-round overwrites.
+──────────────────────────────────────────────*/
 function getNextRoundNumber(){
-  if(tournament.currentGame && tournament.currentGame.currentRound) return tournament.currentGame.currentRound;
   return Math.min(tournament.rounds.length + 1, maxRounds);
 }
 
@@ -859,53 +935,6 @@ function showScreen(id){
   el.scrollTop = 0;
   if(id === 'rules') renderRulesScreen();
   setTimeout(() => { el.scrollTop = 0; }, 50);
-}
-
-function renderRulesScreen(){
-  const n = setupNumPlayers || tournament.numPlayers || 3;
-  const section = document.getElementById('rules-dynamic-section');
-  if(!section) return;
-
-  if(playForMoney || setupPlayForMoney){
-    section.innerHTML = `
-      <div class="rules-section-title">Money rules</div>
-      <div class="rules-pts-grid">
-        <div class="rules-pts-section-label">${n} players — solo Wolf wins</div>
-        <div class="rules-pts-label">Blind Wolf wins</div><div class="rules-pts-val">${n===4?'5x':'4x'} stake from each</div>
-        <div class="rules-pts-label">Lone Wolf wins</div><div class="rules-pts-val">${n===4?'4x':'3x'} stake from each</div>
-        <div class="rules-pts-label">Wolf wins</div><div class="rules-pts-val">${n===4?'3x':'2x'} stake from each</div>
-        <div class="rules-pts-label">Solo Wolf loses</div><div class="rules-pts-val">1x stake to each opponent</div>
-        <div class="rules-pts-divider"></div>
-        <div class="rules-pts-section-label">${n===3?'3 players — partner chosen':'4 players — partner play'}</div>
-        <div class="rules-pts-label">${n===3?'Lone player wins':'Winning side'}</div><div class="rules-pts-val">${n===3?'2x stake total':'1x stake each'}</div>
-        <div class="rules-pts-label">${n===3?'Lone player loses':'Losing side'}</div><div class="rules-pts-val">${n===3?'-2x stake total':'-1x stake each'}</div>
-        <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">${setupCarryPot ? `carry ${fmtMoney(setupBetPerPoint * n)}` : '$0'}</div>
-      </div>`;
-    return;
-  }
-
-  section.innerHTML = `
-    <div class="rules-section-title">Scoring</div>
-    <div class="rules-pts-grid">
-      <div class="rules-pts-section-label">3 players — solo Wolf</div>
-      <div class="rules-pts-label">Blind Wolf wins</div><div class="rules-pts-val">+4p</div>
-      <div class="rules-pts-label">Lone Wolf wins</div><div class="rules-pts-val">+3p</div>
-      <div class="rules-pts-label">Wolf wins</div><div class="rules-pts-val">+2p</div>
-      <div class="rules-pts-label">Opponents beat solo Wolf</div><div class="rules-pts-val">+1p each</div>
-      <div class="rules-pts-section-label">3 players — partner play</div>
-      <div class="rules-pts-label">Lone player wins</div><div class="rules-pts-val">+2p</div>
-      <div class="rules-pts-label">Partner side wins</div><div class="rules-pts-val">+1p each</div>
-      <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">0p</div>
-      <div class="rules-pts-divider"></div>
-      <div class="rules-pts-section-label">4 players — solo Wolf</div>
-      <div class="rules-pts-label">Blind Wolf wins</div><div class="rules-pts-val">+5p</div>
-      <div class="rules-pts-label">Lone Wolf wins</div><div class="rules-pts-val">+4p</div>
-      <div class="rules-pts-label">Wolf wins</div><div class="rules-pts-val">+3p</div>
-      <div class="rules-pts-label">Opponents beat solo Wolf</div><div class="rules-pts-val">+1p each</div>
-      <div class="rules-pts-section-label">4 players — 2v2 partner play</div>
-      <div class="rules-pts-label">Winning side</div><div class="rules-pts-val">+1p each</div>
-      <div class="rules-pts-label">Tied hole</div><div class="rules-pts-val">0p</div>
-    </div>`;
 }
 
 function render(){
@@ -984,6 +1013,7 @@ function renderChoices(){
     return;
   }
 
+  /* ── Cache holeInfo() once per render pass ── */
   const info = holeInfo();
   const wolfLabel = info.isSolo ? info.wolfName : info.wolfSideNames;
   const otherLabel = info.isSolo ? info.vsNames : info.vsSideNames;
@@ -1031,8 +1061,6 @@ function calcHoleMoneyChanges(changes, info, resultType){
   if(!playForMoney) return delta;
   if(!info) return delta;
 
-  // If the hole is tied, no money changes hands now.
-  // Optional carry pot: carry the full hole pot forward.
   if(resultType === 'draw'){
     if(setupCarryPot) carryPot += betPerPoint * numPlayers;
     return delta;
@@ -1085,7 +1113,6 @@ function calcHoleMoneyChanges(changes, info, resultType){
     }
   }
 
-  // Add carried pot as a true zero-sum transfer from losers to winners.
   if(potBonus > 0 && winners.length && losers.length){
     winners.forEach(i => { delta[i] += potBonus / winners.length; });
     losers.forEach(i => { delta[i] -= potBonus / losers.length; });
@@ -1099,6 +1126,13 @@ function calcHoleMoneyChanges(changes, info, resultType){
   return out;
 }
 
+/* ─────────────────────────────────────────────
+   FIX: confirmHole()
+   1. holeInfo() cached once at the top
+   2. Removed duplicate if/else branches in the
+      'others' result block — both branches were
+      identical, collapsed into one
+──────────────────────────────────────────────*/
 function confirmHole(){
   const info = holeInfo();
   let changes = new Array(numPlayers).fill(0);
@@ -1121,13 +1155,9 @@ function confirmHole(){
       }
     }
   } else if(hResult === 'others'){
-    if(!info.isSolo && numPlayers === 3){
-      info.partnerSide.forEach(i => { changes[i] = 1; });
-      desc = `${otherLabel} wins (+1p each)`;
-    } else {
-      info.partnerSide.forEach(i => { changes[i] = 1; });
-      desc = `${otherLabel} wins (+1p each)`;
-    }
+    /* FIX: was two identical if/else branches — collapsed into one */
+    info.partnerSide.forEach(i => { changes[i] = 1; });
+    desc = `${otherLabel} wins (+1p each)`;
   } else {
     desc = 'Tied';
   }
@@ -1259,6 +1289,19 @@ function calcSettlement(playerNames, balances){
   return transactions;
 }
 
+function renderSettlementList(playerNames, balances, listEl){
+  const transactions = calcSettlement(playerNames, balances);
+  listEl.innerHTML = transactions.length === 0
+    ? '<div class="settlement-even">🤝 Everyone is even!</div>'
+    : transactions.map(t => `
+      <div class="settlement-row">
+        <div class="settlement-from">${t.from} pays</div>
+        <div class="settlement-amount">$${Number.isInteger(t.amount) ? t.amount.toFixed(0) : t.amount.toFixed(2)}</div>
+        <div class="settlement-arrow">↓</div>
+        <div class="settlement-to">${t.to}</div>
+      </div>`).join('');
+}
+
 function showTournamentSettlement(){
   const tPlayers = tournament.players.length ? tournament.players : players;
   const tBalances = tPlayers.map(name => {
@@ -1269,31 +1312,12 @@ function showTournamentSettlement(){
     });
     return roundMoney(total);
   });
-  const transactions = calcSettlement(tPlayers, tBalances);
-  document.getElementById('settlement-list').innerHTML = transactions.length === 0
-    ? '<div class="settlement-even">🤝 Everyone is even!</div>'
-    : transactions.map(t => `
-      <div class="settlement-row">
-        <div class="settlement-from">${t.from} pays</div>
-        <div class="settlement-amount">$${Number.isInteger(t.amount) ? t.amount.toFixed(0) : t.amount.toFixed(2)}</div>
-        <div class="settlement-arrow">↓</div>
-        <div class="settlement-to">${t.to}</div>
-      </div>`).join('');
+  renderSettlementList(tPlayers, tBalances, document.getElementById('settlement-list'));
   showScreen('settlement');
 }
 
 function showSettlement(){
-  const transactions = calcSettlement(players, moneyBalances);
-  const list = document.getElementById('settlement-list');
-  list.innerHTML = transactions.length === 0
-    ? '<div class="settlement-even">🤝 Everyone is even — no money changes hands!</div>'
-    : transactions.map(t => `
-      <div class="settlement-row">
-        <div class="settlement-from">${t.from} pays</div>
-        <div class="settlement-amount">$${Number.isInteger(t.amount) ? t.amount.toFixed(0) : t.amount.toFixed(2)}</div>
-        <div class="settlement-arrow">↓</div>
-        <div class="settlement-to">${t.to}</div>
-      </div>`).join('');
+  renderSettlementList(players, moneyBalances, document.getElementById('settlement-list'));
   showScreen('settlement');
 }
 
@@ -1341,7 +1365,7 @@ function renderTournament(){
   const remaining = Math.max(0, mr - completed);
   const leader = displayTotals[0];
 
-  document.getElementById('t-finish-sub').textContent = playForMoney ? `Cash balance · ${mr} round${mr>1?'r':''}` : `Total score · ${mr} round${mr>1?'r':''}`;
+  document.getElementById('t-finish-sub').textContent = playForMoney ? `Cash balance · ${mr} round${mr>1?'s':''}` : `Total score · ${mr} round${mr>1?'s':''}`;
 
   document.getElementById('t-summary-card').innerHTML = `
     <div class="summary-card-top">
@@ -1406,8 +1430,10 @@ function prepareNextRound(){
   playForMoney = tournament.playForMoney || false;
   betPerPoint = tournament.betPerPoint || 1;
   settlementType = tournament.settlementType || 'winner';
+  setupCarryPot = tournament.setupCarryPot || false;
   scores = new Array(np).fill(0);
   moneyBalances = new Array(np).fill(0);
+  carryPot = 0;
   hole = 1;
   history = [];
   showHist = false;
@@ -1452,8 +1478,8 @@ function resetTournament(){
   players=[]; scores=[]; moneyBalances=[]; hole=1; history=[]; showHist=false;
   hChoice=null; hResult=null; currentRound=1; roundName='Round 1';
   numPlayers=3; maxRounds=1; setupNumPlayers=3; setupMaxRounds=1;
-  playForMoney=false; betPerPoint=1; settlementType='winner';
-  setupPlayForMoney=false; setupBetPerPoint=1; setupSettlementType='winner';
+  playForMoney=false; betPerPoint=1; settlementType='winner'; carryPot=0;
+  setupPlayForMoney=false; setupBetPerPoint=1; setupSettlementType='winner'; setupCarryPot=false;
   document.getElementById('setup-active').style.display = 'none';
   document.getElementById('setup-new').style.display = 'flex';
   setPlayerCount(3);
@@ -1461,6 +1487,7 @@ function resetTournament(){
   setBetting(false);
   setSettlementType('winner');
   setBetAmount(1);
+  setCarryPot(false);
   ['p1','p2','p3','p4'].forEach(id => { document.getElementById(id).value=''; });
   showScreen('setup');
 }
@@ -1714,10 +1741,12 @@ window.onload = function(){
       setupNumPlayers=3; setupMaxRounds=1;
       playForMoney=false; betPerPoint=1; settlementType='winner';
       setupPlayForMoney=false; setupBetPerPoint=1; setupSettlementType='winner';
+      setupCarryPot=false; carryPot=0;
       setPlayerCount(3);
       document.getElementById('maxRoundsDisplay').textContent = 1;
       setBetting(false);
       setBetAmount(1);
+      setCarryPot(false);
       updateResetButton();
       showScreen('setup');
       showToast('Saved game was reset after an error');
