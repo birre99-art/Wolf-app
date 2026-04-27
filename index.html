@@ -559,26 +559,26 @@ function setPlayerCount(n){
 }
 function changeMaxRounds(delta){ setupMaxRounds=Math.max(1,Math.min(20,setupMaxRounds+delta)); document.getElementById('maxRoundsDisplay').textContent=setupMaxRounds; }
 
-function buildRulesHTML(n, forMoney, betAmt, carryOn){
+function buildRulesHTML(n, forMoney, betAmt, carryOn, goesLast){
   if(forMoney){
     const tieText=carryOn?`carry +${fmtMoney(betAmt*n)}`:'$0';
     return `<div class="rules-title">Money rules — ${n} players</div>
       <div class="rules-row"><span>Blind Wolf wins</span><span>${n===4?'+5x':'+4x'} stake from each</span></div>
-      <div class="rules-row"><span>Lone Wolf wins</span><span>${n===4?'+4x':'+3x'} stake from each</span></div>
-      <div class="rules-row"><span>Wolf wins</span><span>${n===4?'+3x':'+2x'} stake from each</span></div>
+      ${goesLast?'':` <div class="rules-row"><span>Lone Wolf wins</span><span>${n===4?'+4x':'+3x'} stake from each</span></div>`}
+      <div class="rules-row"><span>${goesLast?'Solo Wolf wins':'Wolf wins'}</span><span>${n===4?'+3x':'+2x'} stake from each</span></div>
       <div class="rules-row"><span>Solo Wolf loses</span><span>-1x stake to each</span></div>
       <div class="rules-row"><span>${n===3?'Lone player wins vs pair':'Winning side in partner play'}</span><span>${n===3?'+2x / -2x':'±1x each'}</span></div>
       <div class="rules-row"><span>Tied hole</span><span>${tieText}</span></div>`;
   }
-  return `<div class="rules-title">Scoring — ${n} players</div>
+  return `<div class="rules-title">Scoring — ${n} players · Wolf ${goesLast?'last':'first'}</div>
     <div class="rules-row"><span>Blind Wolf wins (solo)</span><span>+${n===4?5:4}p</span></div>
-    <div class="rules-row"><span>Lone Wolf wins (solo)</span><span>+${n===4?4:3}p</span></div>
-    <div class="rules-row"><span>Wolf wins (solo)</span><span>+${n===4?3:2}p</span></div>
+    ${goesLast?'':` <div class="rules-row"><span>Lone Wolf wins (solo)</span><span>+${n===4?4:3}p</span></div>`}
+    <div class="rules-row"><span>${goesLast?'Solo Wolf wins':'Wolf wins'} (solo)</span><span>+${n===4?3:2}p</span></div>
     <div class="rules-row"><span>Opponents beat solo Wolf</span><span>+1p each</span></div>
     <div class="rules-row"><span>${n===4?'2v2 winning side':'Partner side wins'}</span><span>+1p each</span></div>
     <div class="rules-row"><span>Tied hole</span><span>0p</span></div>`;
 }
-function renderRulesBox(){ const b=document.getElementById('rules-box'); if(b) b.innerHTML=buildRulesHTML(setupNumPlayers,setupPlayForMoney,setupBetPerPoint,setupCarryPot); }
+function renderRulesBox(){ const b=document.getElementById('rules-box'); if(b) b.innerHTML=buildRulesHTML(setupNumPlayers,setupPlayForMoney,setupBetPerPoint,setupCarryPot,setupWolfGoesLast); }
 
 function renderRulesScreen(){
   const n=setupNumPlayers||tournament.numPlayers||3;
@@ -691,7 +691,7 @@ function updateResetButton(){
     document.getElementById('active-players-display').textContent=tournament.players.join(' · ')||'';
     document.getElementById('active-rounds-display').textContent=`${completed} of ${mr} rounds · ${np} players · ${tournament.maxHoles||18} holes · Wolf ${tournament.wolfGoesLast?'last':'first'}`;
     const rb=document.getElementById('rules-box-active');
-    if(rb) rb.innerHTML=buildRulesHTML(np,tournament.playForMoney||false,tournament.betPerPoint||1,tournament.setupCarryPot||false);
+    if(rb) rb.innerHTML=buildRulesHTML(np,tournament.playForMoney||false,tournament.betPerPoint||1,tournament.setupCarryPot||false,tournament.wolfGoesLast||false);
   } else { activeDiv.style.display='none'; }
 }
 
